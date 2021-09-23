@@ -49,9 +49,6 @@ open class GoogleMapVM(
     private val _direction = MutableLiveData<Result<Direction>>()
     val direction: LiveData<Result<Direction>> = _direction
 
-    private val _currentPlaceFavorite = MutableLiveData<Result<Boolean>>()
-    val currentPlaceFavorite: LiveData<Result<Boolean>> = _currentPlaceFavorite
-
     val currentLanguage: String?
         get() = currentAddress.value?.locale?.language
 
@@ -71,10 +68,10 @@ open class GoogleMapVM(
 
     fun toggleMapMode() {
         googleMapWrapper.mapMode.onNext(
-            if(googleMapWrapper.mapMode.value == GoogleMapWrapper.MAP_MODE.PLACE)
-                GoogleMapWrapper.MAP_MODE.DIRECTION
+            if(googleMapWrapper.mapMode.value == MAP_MODE.PLACE)
+                MAP_MODE.DIRECTION
             else
-                GoogleMapWrapper.MAP_MODE.PLACE
+                MAP_MODE.PLACE
         )
     }
 
@@ -138,12 +135,12 @@ open class GoogleMapVM(
 
     private fun setPlace(placeId: String, location: Location) {
         when(googleMapWrapper.mapMode.value) {
-            GoogleMapWrapper.MAP_MODE.PLACE -> {
+            MAP_MODE.PLACE -> {
                 googleMapWrapper.createPlaceMarker(location)
                 getInfoByLocation(placeId)
             }
-            GoogleMapWrapper.MAP_MODE.DIRECTION -> {
-                if(googleMapWrapper.currentDirectionMarker.value == GoogleMapWrapper.DIRECTION_MARKER.ORIGIN)
+            MAP_MODE.DIRECTION -> {
+                if(googleMapWrapper.currentDirectionMarker.value == DIRECTION_MARKER.ORIGIN)
                     googleMapWrapper.createOriginMarker(location)
                 else
                     googleMapWrapper.createDestinationMarker(location)

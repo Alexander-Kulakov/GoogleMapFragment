@@ -27,19 +27,19 @@ import com.google.maps.android.PolyUtil
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.BehaviorSubject
 
+enum class MAP_MODE {
+    DIRECTION, PLACE
+}
+
+enum class DIRECTION_MARKER {
+    ORIGIN, DESTINATION
+}
+
 open class GoogleMapWrapper(
     private val context: Context
 ) {
 
     private val compositeDisposable = CompositeDisposable()
-
-    enum class MAP_MODE {
-        DIRECTION, PLACE
-    }
-
-    enum class DIRECTION_MARKER {
-        ORIGIN, DESTINATION
-    }
 
     companion object {
         private const val TAG = "GoogleMapWrapper"

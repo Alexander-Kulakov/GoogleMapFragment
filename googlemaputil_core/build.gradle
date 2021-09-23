@@ -1,7 +1,11 @@
 plugins {
     id 'java-library'
     id 'kotlin'
+    id 'maven-publish'
 }
+
+group = 'com.github.googlemaputil'
+version = '1.0.2'
 
 java {
     sourceCompatibility = JavaVersion.VERSION_11
