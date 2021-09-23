@@ -13,8 +13,8 @@
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/GoogleMaps" />
             <option value="$PROJECT_DIR$/app" />
-            <option value="$PROJECT_DIR$/data" />
-            <option value="$PROJECT_DIR$/domain" />
+            <option value="$PROJECT_DIR$/googlemaputil_android" />
+            <option value="$PROJECT_DIR$/googlemaputil_core" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />

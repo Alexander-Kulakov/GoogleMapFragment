@@ -31,7 +31,7 @@ android {
 
 dependencies {
 
-    implementation project(path: ':domain')
+    implementation project(path: ':googlemaputil_core')
 
     // Retrofit
     implementation "com.squareup.retrofit2:retrofit:$retrofit_version"

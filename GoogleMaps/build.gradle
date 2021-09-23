@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com.github.googlemaputil'
-version = '1.0.0'
+version = '1.0.1'
 
 android {
     compileSdkVersion 31
@@ -31,8 +31,8 @@ android {
 }
 
 dependencies {
-    implementation project(path: ':domain')
-    implementation project(path: ':data')
+    implementation project(path: ':googlemaputil_core')
+    implementation project(path: ':googlemaputil_android')
 
     implementation 'com.google.android.libraries.places:places:2.4.0'
 
@@ -76,7 +76,7 @@ afterEvaluate {
                 from components.release
                 groupId = 'com.github.googlemaputil'
                 artifactId = 'googlemaputil'
-                version = '1.0.0'
+                version = '1.0.1'
             }
         }
     }
