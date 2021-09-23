@@ -1,0 +1,26 @@
+package com.example.googlemaps
+
+import android.app.Application
+import androidx.annotation.StringRes
+import com.example.data.api.ApiConstants
+import com.example.data.di.networkModule
+import com.example.data.di.useCaseModule
+import com.example.maps.di.viewModelModule
+import com.google.android.libraries.places.api.Places
+import org.koin.android.ext.koin.androidContext
+import org.koin.core.context.startKoin
+
+class GoogleMapApplication(@StringRes private val googleMapKey: Int): Application() {
+    override fun onCreate() {
+        super.onCreate()
+
+        val apiKey = getString(googleMapKey)
+        ApiConstants.API_KEY = apiKey
+        Places.initialize(applicationContext, apiKey)
+
+        startKoin {
+            androidContext(this@GoogleMapApplication)
+            modules(networkModule, useCaseModule, viewModelModule)
+        }
+    }
+}

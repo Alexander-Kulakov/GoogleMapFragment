@@ -1,0 +1,5 @@
+rootProject.name = "GoogleMapUtil"
+include ':app'
+include ':GoogleMaps'
+include ':domain'
+include ':data'
