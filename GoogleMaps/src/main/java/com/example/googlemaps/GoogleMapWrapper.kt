@@ -27,7 +27,7 @@ import com.google.maps.android.PolyUtil
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.BehaviorSubject
 
-class GoogleMapWrapper(
+open class GoogleMapWrapper(
     private val context: Context
 ) {
 

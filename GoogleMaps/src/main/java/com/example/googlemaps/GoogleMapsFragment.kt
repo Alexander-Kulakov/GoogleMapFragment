@@ -14,7 +14,7 @@ import io.reactivex.disposables.CompositeDisposable
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 
 
-class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
+open class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
     : Fragment(), OnMapReadyCallback {
 
     companion object {

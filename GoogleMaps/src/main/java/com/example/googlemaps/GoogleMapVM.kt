@@ -25,13 +25,10 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.BehaviorSubject
 
-class GoogleMapVM(
+open class GoogleMapVM(
     app: Application,
     private val getInfoByLocationUseCase: GetInfoByLocationUseCase,
     private val getDirectionUseCase: GetDirectionUseCase,
-    /*private val isPlaceInMarkdownsUseCase: IsPlaceInMarkdownsUseCase,
-    private val insertMarkdownUseCase: InsertMarkdownUseCase,
-    private val deleteMarkdownByIdUseCase: DeleteMarkdownByIdUseCase*/
 ): AndroidViewModel(app) {
     companion object {
         private const val TAG = "GoogleMapViewModel"

@@ -10,7 +10,7 @@ import com.google.android.libraries.places.api.Places
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 
-class GoogleMapApplication(@StringRes private val googleMapKey: Int): Application() {
+open class GoogleMapApplication(@StringRes private val googleMapKey: Int): Application() {
     override fun onCreate() {
         super.onCreate()
 
