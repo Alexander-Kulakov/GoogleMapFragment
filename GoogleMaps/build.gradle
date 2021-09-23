@@ -4,7 +4,7 @@ plugins {
     id 'maven-publish'
 }
 
-group = 'com.github.googlemaputil'
+group = 'com.github.Alexander-Kulakov'
 version = '1.0.3'
 
 android {
@@ -74,8 +74,8 @@ afterEvaluate {
             // Creates a Maven publication called "release".
             release(MavenPublication) {
                 from components.release
-                groupId = 'com.github.googlemaputil'
-                artifactId = 'googlemaputil'
+                groupId = 'com.github.Alexander-Kulakov'
+                artifactId = 'GoogleMaps'
                 version = '1.0.3'
             }
         }

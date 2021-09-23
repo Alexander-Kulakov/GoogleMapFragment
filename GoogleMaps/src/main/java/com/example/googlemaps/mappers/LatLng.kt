@@ -1,6 +1,6 @@
 package com.example.googlemaps.mappers
 
-import com.example.domain.models.Location
+import com.example.googlemaputil_core.models.Location
 import com.google.android.gms.maps.model.LatLng
 
 fun LatLng.toModel(): Location {

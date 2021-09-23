@@ -12,9 +12,9 @@ import android.util.Log
 import androidx.annotation.ColorRes
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.example.domain.models.Location
-import com.example.domain.models.directions.Direction
-import com.example.domain.models.directions.Step
+import com.example.googlemaputil_core.models.Location
+import com.example.googlemaputil_core.models.directions.Direction
+import com.example.googlemaputil_core.models.directions.Step
 import com.example.googlemaps.mappers.fromModel
 import com.example.googlemaps.mappers.toModel
 import com.example.googlemaps.utils.Utils

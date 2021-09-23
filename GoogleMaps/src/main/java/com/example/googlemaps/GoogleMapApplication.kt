@@ -2,9 +2,9 @@ package com.example.googlemaps
 
 import android.app.Application
 import androidx.annotation.StringRes
-import com.example.data.api.ApiConstants
-import com.example.data.di.networkModule
-import com.example.data.di.useCaseModule
+import com.example.googlemaputil_android.api.ApiConstants
+import com.example.googlemaputil_android.di.networkModule
+import com.example.googlemaputil_android.di.useCaseModule
 import com.example.maps.di.viewModelModule
 import com.google.android.libraries.places.api.Places
 import org.koin.android.ext.koin.androidContext
