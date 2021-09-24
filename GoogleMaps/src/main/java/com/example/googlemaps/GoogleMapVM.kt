@@ -1,212 +1,263 @@
 package com.example.googlemaps
 
+import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Application
+import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.location.Address
+import android.location.Geocoder
+import android.os.Looper
 import android.util.Log
+import androidx.annotation.ColorRes
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
+import com.example.googlemaps.mappers.toModel
+import com.example.googlemaps.utils.Utils
+import com.example.googlemaps.viewModels.DirectionSegment
 import com.example.googlemaputil_core.common.DIRECTION_TYPE
 import com.example.googlemaputil_core.common.Result
-import com.example.googlemaputil_core.models.Location
 import com.example.googlemaputil_core.models.directions.Direction
 import com.example.googlemaputil_core.models.place_info.PlaceInfo
 import com.example.googlemaputil_core.use_cases.GetDirectionUseCase
 import com.example.googlemaputil_core.use_cases.GetInfoByLocationUseCase
-import com.example.googlemaps.mappers.toModel
 import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.location.*
+import com.google.android.gms.maps.model.*
 import com.google.android.libraries.places.api.Places
-import com.google.android.libraries.places.api.model.AutocompletePrediction
-import com.google.android.libraries.places.api.model.AutocompleteSessionToken
-import com.google.android.libraries.places.api.model.Place
-import com.google.android.libraries.places.api.model.TypeFilter
-import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
+import com.google.maps.android.PolyUtil
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.BehaviorSubject
 
 open class GoogleMapVM(
-    app: Application,
+    private val app: Application,
     private val getInfoByLocationUseCase: GetInfoByLocationUseCase,
     private val getDirectionUseCase: GetDirectionUseCase,
 ): AndroidViewModel(app) {
+
     companion object {
         private const val TAG = "GoogleMapViewModel"
+
+        private const val DEFAULT_LOCATION_INTERVAL = 5000L
+        private const val DEFAULT_FASTEST_LOCATION_INTERVAL = 3000L
+
+        private const val DEFAULT_ZOOM = 15f
+        private const val DEFAULT_POLYLINE_WIDTH = 8f
+
+        private val colors = listOf(
+            R.color.black,
+            R.color.green,
+            R.color.red,
+            R.color.teal_700,
+            R.color.purple_500,
+            R.color.orange
+        )
     }
 
     var currentAddress = BehaviorSubject.create<Address>()
-
-    var directionType = DIRECTION_TYPE.DRIVING
-
-    val googleMapWrapper = GoogleMapWrapper(app)
-    private val placesClient = Places.createClient(app)
-
-    private val compositeDisposable = CompositeDisposable()
-
-    private val _placeData = MutableLiveData<Result<PlaceInfo>>()
-    val placeData: LiveData<Result<PlaceInfo>> = _placeData
-
-    private val _direction = MutableLiveData<Result<Direction>>()
-    val direction: LiveData<Result<Direction>> = _direction
+    var currentLocation = BehaviorSubject.create<LatLng>()
 
     val currentLanguage: String?
         get() = currentAddress.value?.locale?.language
 
 
-    var currentPlaceId: String? = null
-        private set
+    private val compositeDisposable = CompositeDisposable()
+    private val placesClient = Places.createClient(app)
+    private val fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(app)
+
+
+    val placeMarker = BehaviorSubject.createDefault(MarkerOptions())
+    val originMarker = BehaviorSubject.createDefault(MarkerOptions().icon(Utils.getBitmapFromVector(app, R.drawable.ic_origin_marker)))
+    val destinationMarker = BehaviorSubject.createDefault(MarkerOptions().icon(Utils.getBitmapFromVector(app, R.drawable.ic_destination_marker)))
+
+    var currentCameraPosition = BehaviorSubject.create<LatLng>()
+
+
+    var directionType = DIRECTION_TYPE.DRIVING
+
+    val currentMapMode = BehaviorSubject.createDefault(GoogleMapUtil.MAP_MODE.PLACE)
+    var currentMarkerType = BehaviorSubject.createDefault(GoogleMapUtil.DIRECTION_MARKER.DESTINATION)
+
+
+    val placeInfo = BehaviorSubject.create<Result<PlaceInfo>>()
+    val direction = BehaviorSubject.create<Result<Direction>>()
+
+
+    fun setMarker(point: PointOfInterest) {
+        when(currentMapMode.value) {
+            GoogleMapUtil.MAP_MODE.PLACE -> {
+                placeMarker.onNext(placeMarker.value!!.position(point.latLng))
+                getInfoByLocation(point.placeId)
+            }
+            GoogleMapUtil.MAP_MODE.DIRECTION -> {
+                if(currentMarkerType.value == GoogleMapUtil.DIRECTION_MARKER.ORIGIN) {
+                    originMarker.onNext(originMarker.value!!.position(point.latLng))
+                } else {
+                    destinationMarker.onNext(destinationMarker.value!!.position(point.latLng))
+                }
+            }
+        }
+        currentCameraPosition.onNext(point.latLng)
+    }
 
 
     init {
-        compositeDisposable.add(
-            googleMapWrapper.currentLocation.subscribe {
-                val address = googleMapWrapper.getAddressByLocation(it) ?: return@subscribe
+        compositeDisposable.addAll(
+            currentMapMode.subscribe {
+                val isPlaceMode = it == GoogleMapUtil.MAP_MODE.PLACE
+
+                placeMarker.value?.let {
+                    placeMarker.onNext(it.visible(isPlaceMode))
+                }
+                originMarker.value?.let {
+                    originMarker.onNext(it.visible(isPlaceMode))
+                }
+                destinationMarker.value?.let {
+                    destinationMarker.onNext(it.visible(isPlaceMode))
+                }
+            },
+            currentLocation.subscribe {
+                val address = getAddressByLocation(it) ?: return@subscribe
                 currentAddress.onNext(address)
             }
         )
-    }
-
-    fun toggleMapMode() {
-        googleMapWrapper.mapMode.onNext(
-            if(googleMapWrapper.mapMode.value == MAP_MODE.PLACE)
-                MAP_MODE.DIRECTION
-            else
-                MAP_MODE.PLACE
-        )
-    }
-
-    fun getInfoByLocation(placeId: String) {
-        currentPlaceId = placeId
-
-        Log.w(TAG, "current locality $currentLanguage")
-
-        _placeData.value = Result.Loading()
-
-        compositeDisposable.add(
-            getInfoByLocationUseCase.invoke(placeId, currentLanguage).observeOn(AndroidSchedulers.mainThread())
-                .subscribe({
-                    _placeData.value = Result.Success(it)
-                }, {
-                    _placeData.value = Result.Failure(it)
-                })
-        )
-
-        /*compositeDisposable.add(
-            isPlaceInMarkdownsUseCase.invoke(placeId)
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({
-                    _currentPlaceFavorite.value = Result.Success(true)
-                }, {
-                    Log.e(TAG, "place markdowns error ${it.message}")
-                    if(it is EmptyResultException)
-                        _currentPlaceFavorite.value = Result.Success(false)
-                })
-        )*/
+        observeDeviceLocation()
     }
 
     fun getDirection() {
-        if(googleMapWrapper.origin.value == null || googleMapWrapper.destination.value == null) return
+        if(originMarker.value == null || destinationMarker.value == null) return
 
-        val origin = googleMapWrapper.origin.value!!.position.toModel()
-        val destination = googleMapWrapper.destination.value!!.position.toModel()
+        val origin = originMarker.value!!.position.toModel()
+        val destination = destinationMarker.value!!.position.toModel()
 
-        _direction.value = Result.Loading()
+        direction.onNext(Result.Loading())
         compositeDisposable.add(
             getDirectionUseCase.invoke(origin, destination, directionType, currentLanguage)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
-                    _direction.value = Result.Success(it)
+                    direction.onNext(Result.Success(it))
                 }, {
-                    _direction.value = Result.Failure(it)
+                    direction.onNext(Result.Failure(it))
                 })
         )
     }
 
-    fun setPlace(place: Place) {
-        setPlace(place.id!!, place.latLng!!.toModel())
-    }
+    fun getInfoByLocation(placeId: String) {
+        //currentPlaceId = placeId
 
-    /*fun setPlace(markdown: Markdown) {
-        if(markdown.location == null) return
+        Log.w(TAG, "current locality $currentLanguage")
 
-        val latLng = LatLng(markdown.location!!.lat, markdown.location!!.lng)
-        setPlace(markdown.placeId, latLng.toModel())
-    }*/
+        placeInfo.onNext(Result.Loading())
 
-    private fun setPlace(placeId: String, location: Location) {
-        when(googleMapWrapper.mapMode.value) {
-            MAP_MODE.PLACE -> {
-                googleMapWrapper.createPlaceMarker(location)
-                getInfoByLocation(placeId)
-            }
-            MAP_MODE.DIRECTION -> {
-                if(googleMapWrapper.currentDirectionMarker.value == DIRECTION_MARKER.ORIGIN)
-                    googleMapWrapper.createOriginMarker(location)
-                else
-                    googleMapWrapper.createDestinationMarker(location)
-            }
-        }
-        googleMapWrapper.moveCamera(location)
-    }
+        compositeDisposable.add(
+            getInfoByLocationUseCase.invoke(placeId, currentLanguage).observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    placeInfo.onNext(Result.Success(it))
+                }, {
+                    placeInfo.onNext(Result.Failure(it))
+                })
+        )
 
-    /*fun toggleFavoriteCurrentPlace() {
-        if(currentPlaceId == null)
-            return
-
-        _currentPlaceFavorite.value = Result.Loading()
-
-        val subscriber = isPlaceInMarkdownsUseCase.invoke(currentPlaceId!!)
+        /*val placeInMarkdown = isPlaceInMarkdownsUseCase.invoke(placeId)
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({
-                Log.d(TAG, "update favorite place success")
-                val deleteSubscriber = deleteMarkdownByIdUseCase.invoke(currentPlaceId!!)
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe({
-                        _currentPlaceFavorite.value = Result.Success(false)
-                    }, {
-                        _currentPlaceFavorite.value = Result.Failure(it)
-                    })
-                compositeDisposable.add(deleteSubscriber)
+                _currentPlaceFavorite.value = kotlin.Result.Success(true)
             }, {
-                Log.e(TAG, "update favorite place exception ${it.message}")
-                if(it is EmptyResultException) {
-                    val placeInfo = (_placeData.value as Result.Success).value
-                    val markdown = Markdown(currentPlaceId!!, placeInfo.name, placeInfo.address, placeInfo.location)
-                    val insertSubscriber = insertMarkdownUseCase.invoke(markdown)
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe({
-                            _currentPlaceFavorite.value = Result.Success(true)
-                        }, {
-                            _currentPlaceFavorite.value = Result.Failure(it)
-                        })
-                    compositeDisposable.add(insertSubscriber)
+                Log.e(TAG, "place markdowns error ${it.message}")
+                if(it is EmptyResultException)
+                    _currentPlaceFavorite.value = kotlin.Result.Success(false)
+            })*/
+        //compositeDisposable.add(placeInMarkdown)
+    }
+
+    @SuppressLint("MissingPermission")
+    fun observeDeviceLocation() {
+        val locationRequest = LocationRequest()
+            .setInterval(DEFAULT_LOCATION_INTERVAL)
+            .setFastestInterval(DEFAULT_FASTEST_LOCATION_INTERVAL)
+            .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+
+        val builder = LocationSettingsRequest.Builder().addLocationRequest(locationRequest).setAlwaysShow(true)
+
+        val locationSettingsResponseTask = LocationServices.getSettingsClient(app).checkLocationSettings(builder.build())
+
+        locationSettingsResponseTask.addOnCompleteListener {
+            try {
+                if (checkCoarseAndFineLocationPermissions()) {
+
+                    fusedLocationProviderClient.requestLocationUpdates(locationRequest, object : LocationCallback() {
+                        override fun onLocationResult(locationResult: LocationResult) {
+                            super.onLocationResult(locationResult)
+                            val lat = locationResult.lastLocation.latitude
+                            val lng = locationResult.lastLocation.longitude
+
+                            val newLocation = LatLng(lat, lng)
+                            if(currentLocation.value == null) {
+                                currentLocation.onNext(newLocation)
+                                currentCameraPosition.onNext(newLocation)
+                            }
+
+                            currentLocation.onNext(newLocation)
+                        }
+                    }, Looper.getMainLooper())
+
                 }
-            })
 
-        compositeDisposable.add(subscriber)
-    }*/
-
-    fun getAutocompletePredictions(
-        query: String,
-        successHandler: (List<AutocompletePrediction>) -> Unit,
-        failureHandler: (ApiException) -> Unit
-    ) {
-        val token = AutocompleteSessionToken.newInstance()
-        val request =
-            FindAutocompletePredictionsRequest.builder()
-                .setTypeFilter(TypeFilter.ADDRESS)
-                .setSessionToken(token)
-                .setQuery(query)
-                .build()
-
-        placesClient.findAutocompletePredictions(request).addOnSuccessListener {
-            successHandler(it.autocompletePredictions)
-        }.addOnFailureListener {
-            if (it is ApiException) {
-                Log.e(TAG, "Place not found: " + it.statusCode)
-                failureHandler(it)
+            } catch (e: ApiException) {
+                Log.e(TAG, "getDeviceLocation: SecurityException: " + e.message)
             }
         }
+    }
+
+    fun getAddressByLocation(location: LatLng): Address? {
+        return try {
+            val list =  Geocoder(app)
+                .getFromLocation(location.latitude, location.longitude, 1)
+            val currentAddress = list.firstOrNull()
+            Log.w(TAG, "currentAddress: ${currentAddress?.locale}")
+            currentAddress
+        } catch (e: Exception) {
+            Log.w(TAG, "getAddress exception: ${e}")
+            null
+        }
+    }
+
+    fun checkCoarseAndFineLocationPermissions(): Boolean {
+        return ActivityCompat.checkSelfPermission(app, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(app, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+    }
+
+    fun toggleMapMode() {
+        currentMapMode.onNext(
+            if(currentMapMode.value == GoogleMapUtil.MAP_MODE.PLACE)
+                GoogleMapUtil.MAP_MODE.DIRECTION
+            else
+                GoogleMapUtil.MAP_MODE.PLACE
+        )
+    }
+
+    val directionSegments = BehaviorSubject.create<List<DirectionSegment>>()
+
+    fun createPolylineOptions(polylineList: List<LatLng>, @ColorRes color: Int): PolylineOptions {
+        return PolylineOptions()
+            .color(ContextCompat.getColor(app, color))
+            .width(DEFAULT_POLYLINE_WIDTH)
+            .startCap(ButtCap())
+            .jointType(JointType.ROUND)
+            .clickable(true)
+            .addAll(polylineList)
+    }
+
+    @SuppressLint("PotentialBehaviorOverride")
+    private fun createMarker(location: LatLng, title: String?, markerIcon: BitmapDescriptor? = null, snippet: String? = null): MarkerOptions {
+        val markerOptions = MarkerOptions()
+        markerOptions.position(location)
+        markerOptions.title(title)
+        markerOptions.snippet(snippet)
+        markerOptions.icon(markerIcon ?: BitmapDescriptorFactory.defaultMarker())
+        return markerOptions
     }
 
     override fun onCleared() {
