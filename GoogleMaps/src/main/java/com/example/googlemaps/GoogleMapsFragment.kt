@@ -11,6 +11,7 @@ import androidx.annotation.IdRes
 import androidx.fragment.app.Fragment
 import com.example.googlemaputil_core.common.Result
 import com.example.googlemaputil_core.models.directions.Direction
+import com.example.googlemaputil_core.models.place_info.PlaceInfo
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -84,7 +85,9 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
     }
 
     private var destinationMarker: Marker? = null
+
     private var originMarker: Marker? = null
+
     private var placeMarker: Marker? = null
 
     @SuppressLint("MissingPermission")
@@ -110,7 +113,7 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
                 placeMarker = googleMap.addMarker(it)
             },
             googleMapViewModel.placeInfo.subscribe {
-                placeInfoLoaded()
+                placeInfoLoaded(it)
             },
             googleMapViewModel.direction.subscribe {
                 directionLoaded(it)
@@ -120,11 +123,14 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
             },
             googleMapViewModel.currentAddress.subscribe {
                 currentAddressChanged(it)
+            },
+            googleMapViewModel.currentMapMode.subscribe {
+
             }
         )
 
         googleMap.setOnPoiClickListener {
-            googleMapViewModel.setMarker(it)
+            googleMapViewModel.setMarkerByPointOfInterest(it)
         }
     }
 
@@ -136,6 +142,11 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
         googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(location, zoom))
     }
 
+    fun moveToCurrentLocation() {
+        val myLocation = googleMapViewModel.currentLocation.value
+        if(myLocation != null) moveCamera(myLocation)
+    }
+
     fun toggleMapMode() {
         googleMapViewModel.toggleMapMode()
     }
@@ -144,13 +155,20 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
         googleMapViewModel.getDirection()
     }
 
-    abstract fun placeInfoLoaded()
+    abstract fun mapModeChanged(mapMode: MAP_MODE)
 
-    abstract fun directionLoaded(direction: Result<Direction>)
+    abstract fun placeInfoLoaded(placeInfoResult: Result<PlaceInfo>)
+
+    abstract fun directionLoaded(directionResult: Result<Direction>)
 
     abstract fun currentLocationChanged(latLng: LatLng)
 
     abstract fun currentAddressChanged(address: Address)
+
+
+
+
+
 
     override fun onDestroy() {
         super.onDestroy()

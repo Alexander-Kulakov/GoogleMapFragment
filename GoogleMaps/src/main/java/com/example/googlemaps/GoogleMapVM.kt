@@ -25,6 +25,7 @@ import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.model.*
 import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.model.Place
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.BehaviorSubject
@@ -75,22 +76,22 @@ open class GoogleMapVM(
 
     var directionType = DIRECTION_TYPE.DRIVING
 
-    val currentMapMode = BehaviorSubject.createDefault(GoogleMapUtil.MAP_MODE.PLACE)
-    var currentMarkerType = BehaviorSubject.createDefault(GoogleMapUtil.DIRECTION_MARKER.DESTINATION)
+    val currentMapMode = BehaviorSubject.createDefault(MAP_MODE.PLACE)
+    var currentMarkerType = BehaviorSubject.createDefault(DIRECTION_MARKER.DESTINATION)
 
 
     val placeInfo = BehaviorSubject.create<Result<PlaceInfo>>()
     val direction = BehaviorSubject.create<Result<Direction>>()
 
 
-    fun setMarker(point: PointOfInterest) {
+    fun setMarkerByPointOfInterest(point: PointOfInterest) {
         when(currentMapMode.value) {
-            GoogleMapUtil.MAP_MODE.PLACE -> {
+            MAP_MODE.PLACE -> {
                 placeMarker.onNext(placeMarker.value!!.position(point.latLng))
                 getInfoByLocation(point.placeId)
             }
-            GoogleMapUtil.MAP_MODE.DIRECTION -> {
-                if(currentMarkerType.value == GoogleMapUtil.DIRECTION_MARKER.ORIGIN) {
+            MAP_MODE.DIRECTION -> {
+                if(currentMarkerType.value == DIRECTION_MARKER.ORIGIN) {
                     originMarker.onNext(originMarker.value!!.position(point.latLng))
                 } else {
                     destinationMarker.onNext(destinationMarker.value!!.position(point.latLng))
@@ -99,12 +100,30 @@ open class GoogleMapVM(
         }
         currentCameraPosition.onNext(point.latLng)
     }
+    fun setMarkerByPlace(place: Place) {
+        if(place.latLng == null || place.id == null) return
+
+        when(currentMapMode.value) {
+            MAP_MODE.PLACE -> {
+                placeMarker.onNext(placeMarker.value!!.position(place.latLng!!))
+                getInfoByLocation(place.id!!)
+            }
+            MAP_MODE.DIRECTION -> {
+                if(currentMarkerType.value == DIRECTION_MARKER.ORIGIN) {
+                    originMarker.onNext(originMarker.value!!.position(place.latLng!!))
+                } else {
+                    destinationMarker.onNext(destinationMarker.value!!.position(place.latLng!!))
+                }
+            }
+        }
+        currentCameraPosition.onNext(place.latLng!!)
+    }
 
 
     init {
         compositeDisposable.addAll(
             currentMapMode.subscribe {
-                val isPlaceMode = it == GoogleMapUtil.MAP_MODE.PLACE
+                val isPlaceMode = it == MAP_MODE.PLACE
 
                 placeMarker.value?.let {
                     placeMarker.onNext(it.visible(isPlaceMode))
@@ -229,10 +248,10 @@ open class GoogleMapVM(
 
     fun toggleMapMode() {
         currentMapMode.onNext(
-            if(currentMapMode.value == GoogleMapUtil.MAP_MODE.PLACE)
-                GoogleMapUtil.MAP_MODE.DIRECTION
+            if(currentMapMode.value == MAP_MODE.PLACE)
+                MAP_MODE.DIRECTION
             else
-                GoogleMapUtil.MAP_MODE.PLACE
+                MAP_MODE.PLACE
         )
     }
 
