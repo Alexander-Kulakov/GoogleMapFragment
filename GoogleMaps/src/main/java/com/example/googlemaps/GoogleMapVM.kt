@@ -4,7 +4,6 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Application
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
 import android.location.Address
 import android.location.Geocoder
 import android.os.Looper
@@ -15,7 +14,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import com.example.googlemaps.mappers.toModel
 import com.example.googlemaps.utils.Utils
-import com.example.googlemaps.viewModels.DirectionSegment
+import com.example.googlemaps.models.DirectionSegment
 import com.example.googlemaputil_core.common.DIRECTION_TYPE
 import com.example.googlemaputil_core.common.Result
 import com.example.googlemaputil_core.models.directions.Direction
@@ -26,7 +25,6 @@ import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.model.*
 import com.google.android.libraries.places.api.Places
-import com.google.maps.android.PolyUtil
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.BehaviorSubject

@@ -4,8 +4,8 @@ plugins {
     id 'maven-publish'
 }
 
-group = 'com.github.googlemaputil'
-version = '1.0.2'
+group = 'com.github.Alexander-Kulakov'
+version = '1.0.3'
 
 java {
     sourceCompatibility = JavaVersion.VERSION_11
@@ -15,4 +15,16 @@ java {
 dependencies {
     implementation 'io.reactivex.rxjava2:rxjava:2.2.19'
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            groupId = 'com.github.Alexander-Kulakov'
+            artifactId = 'googlemaputil_core'
+            version = '1.0.3'
+
+            from components.java
+        }
+    }
 }
