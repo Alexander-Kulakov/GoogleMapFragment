@@ -9,6 +9,7 @@ import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.IdRes
 import androidx.fragment.app.Fragment
+import com.example.googlemaps.di.MyKoinComponent
 import com.example.googlemaps.models.DirectionSegmentUI
 import com.example.googlemaputil_core.common.DIRECTION_MARKER
 import com.example.googlemaputil_core.common.DIRECTION_TYPE
@@ -28,7 +29,7 @@ import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 
 
 abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
-    : Fragment(), OnMapReadyCallback {
+    : Fragment(), OnMapReadyCallback, MyKoinComponent {
 
     companion object {
         private const val TAG = "GoogleMapsFragment"
