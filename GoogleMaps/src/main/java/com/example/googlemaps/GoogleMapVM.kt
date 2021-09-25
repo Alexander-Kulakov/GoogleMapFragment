@@ -6,7 +6,6 @@ import android.app.Application
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.location.Address
-import android.location.Geocoder
 import android.os.Looper
 import android.util.Log
 import androidx.annotation.ColorRes
@@ -14,10 +13,12 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import com.example.googlemaps.mappers.toModel
-import com.example.googlemaps.utils.Utils
 import com.example.googlemaps.models.DirectionSegment
 import com.example.googlemaps.utils.MapUtils
+import com.example.googlemaps.utils.Utils
+import com.example.googlemaputil_core.common.DIRECTION_MARKER
 import com.example.googlemaputil_core.common.DIRECTION_TYPE
+import com.example.googlemaputil_core.common.MAP_MODE
 import com.example.googlemaputil_core.common.Result
 import com.example.googlemaputil_core.models.directions.Direction
 import com.example.googlemaputil_core.models.place_info.PlaceInfo
@@ -28,7 +29,6 @@ import com.google.android.gms.location.*
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.*
 import com.google.android.libraries.places.api.Places
-import com.google.android.libraries.places.api.model.Place
 import com.google.maps.android.PolyUtil
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -85,7 +85,7 @@ open class GoogleMapVM(
     val infoWindowAdapter = BehaviorSubject.create<GoogleMap.InfoWindowAdapter>()
 
     val currentMapMode = BehaviorSubject.createDefault(MAP_MODE.PLACE)
-    var currentMarkerType = BehaviorSubject.createDefault(DIRECTION_MARKER.DESTINATION)
+    var currentDirectionMarkerType = BehaviorSubject.createDefault(DIRECTION_MARKER.DESTINATION)
 
 
     val placeInfo = BehaviorSubject.create<Result<PlaceInfo>>()
@@ -101,7 +101,7 @@ open class GoogleMapVM(
                 getInfoByLocation(placeId)
             }
             MAP_MODE.DIRECTION -> {
-                if(currentMarkerType.value == DIRECTION_MARKER.ORIGIN) {
+                if(currentDirectionMarkerType.value == DIRECTION_MARKER.ORIGIN) {
                     originMarker.onNext(originMarker.value!!.position(latLng))
                 } else {
                     destinationMarker.onNext(destinationMarker.value!!.position(latLng))
@@ -146,8 +146,8 @@ open class GoogleMapVM(
             getDirectionUseCase.invoke(origin, destination, dirType, currentLanguage)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
-
                     direction.onNext(Result.Success(it))
+                    buildDirection(it)
                 }, {
                     direction.onNext(Result.Failure(it))
                 })
@@ -170,8 +170,7 @@ open class GoogleMapVM(
                     val invisibleMarker =
                         BitmapDescriptorFactory.fromBitmap(Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888))
 
-                    val markerOptions = createMarkerOptions(midPoint, null, invisibleMarker,
-                        null)
+                    val markerOptions = MarkerOptions().position(midPoint).icon(invisibleMarker)
 
                     newDirectionSegments.add(
                         DirectionSegment(step, polylineOptions, markerOptions)
@@ -185,8 +184,6 @@ open class GoogleMapVM(
 
 
     fun getInfoByLocation(placeId: String) {
-        //currentPlaceId = placeId
-
         Log.w(TAG, "current locality $currentLanguage")
 
         placeInfo.onNext(Result.Loading())
@@ -199,17 +196,6 @@ open class GoogleMapVM(
                     placeInfo.onNext(Result.Failure(it))
                 })
         )
-
-        /*val placeInMarkdown = isPlaceInMarkdownsUseCase.invoke(placeId)
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe({
-                _currentPlaceFavorite.value = kotlin.Result.Success(true)
-            }, {
-                Log.e(TAG, "place markdowns error ${it.message}")
-                if(it is EmptyResultException)
-                    _currentPlaceFavorite.value = kotlin.Result.Success(false)
-            })*/
-        //compositeDisposable.add(placeInMarkdown)
     }
 
     @SuppressLint("MissingPermission")
@@ -273,15 +259,6 @@ open class GoogleMapVM(
             .jointType(JointType.ROUND)
             .clickable(true)
             .addAll(polylineList)
-    }
-
-    @SuppressLint("PotentialBehaviorOverride")
-    private fun createMarkerOptions(location: LatLng, title: String? = null, markerIcon: BitmapDescriptor? = null, snippet: String? = null): MarkerOptions {
-        return MarkerOptions()
-        .position(location)
-        .title(title)
-        .snippet(snippet)
-        .icon(markerIcon ?: BitmapDescriptorFactory.defaultMarker())
     }
 
     override fun onCleared() {

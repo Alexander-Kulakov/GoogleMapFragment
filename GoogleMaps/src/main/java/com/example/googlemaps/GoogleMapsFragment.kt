@@ -10,7 +10,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.IdRes
 import androidx.fragment.app.Fragment
 import com.example.googlemaps.models.DirectionSegmentUI
+import com.example.googlemaputil_core.common.DIRECTION_MARKER
 import com.example.googlemaputil_core.common.DIRECTION_TYPE
+import com.example.googlemaputil_core.common.MAP_MODE
 import com.example.googlemaputil_core.common.Result
 import com.example.googlemaputil_core.models.directions.Direction
 import com.example.googlemaputil_core.models.directions.Step
@@ -134,7 +136,7 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
                 }
                 mapModeChanged(it)
             },
-            googleMapViewModel.currentMarkerType.subscribe {
+            googleMapViewModel.currentDirectionMarkerType.subscribe {
                 directionMarkerTypeChanged()
             },
             googleMapViewModel.directionSegments.subscribe {
@@ -200,7 +202,13 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
     var currentDirectionMarkerType = DIRECTION_MARKER.DESTINATION
         set(value) {
             field = value
-            googleMapViewModel.currentMarkerType.onNext(field)
+            googleMapViewModel.currentDirectionMarkerType.onNext(field)
+        }
+
+    var mapMode = MAP_MODE.PLACE
+        set(value) {
+            field = value
+            googleMapViewModel.currentMapMode.onNext(field)
         }
 
     var infoWindowAdapter: GoogleMap.InfoWindowAdapter? = null
