@@ -1,4 +1,4 @@
-package com.example.maps.di
+package com.example.googlemaps.di
 
 import com.example.googlemaps.GoogleMapVM
 import org.koin.android.ext.koin.androidApplication
