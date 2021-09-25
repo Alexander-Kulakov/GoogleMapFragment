@@ -56,6 +56,9 @@ open class GoogleMapVM(
             R.color.purple_500,
             R.color.orange
         )
+
+        val DEFAULT_MAP_MODE = MAP_MODE.PLACE
+        val DEFAULT_DIRECTION_MARKER_TYPE = DIRECTION_MARKER.DESTINATION
     }
 
     var currentAddress = BehaviorSubject.create<Address>()
@@ -84,8 +87,8 @@ open class GoogleMapVM(
 
     val infoWindowAdapter = BehaviorSubject.create<GoogleMap.InfoWindowAdapter>()
 
-    val currentMapMode = BehaviorSubject.createDefault(MAP_MODE.PLACE)
-    var currentDirectionMarkerType = BehaviorSubject.createDefault(DIRECTION_MARKER.DESTINATION)
+    val currentMapMode = BehaviorSubject.createDefault(DEFAULT_MAP_MODE)
+    var currentDirectionMarkerType = BehaviorSubject.createDefault(DEFAULT_DIRECTION_MARKER_TYPE)
 
 
     val placeInfo = BehaviorSubject.create<Result<PlaceInfo>>()

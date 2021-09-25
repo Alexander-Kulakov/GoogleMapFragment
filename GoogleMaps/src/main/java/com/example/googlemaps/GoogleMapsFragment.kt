@@ -9,13 +9,8 @@ import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.IdRes
 import androidx.fragment.app.Fragment
-import com.example.googlemaps.di.MyKoinComponent
-import com.example.googlemaps.di.MyKoinContext
 import com.example.googlemaps.di.inject
-import com.example.googlemaps.di.viewModelModule
 import com.example.googlemaps.models.DirectionSegmentUI
-import com.example.googlemaputil_android.di.networkModule
-import com.example.googlemaputil_android.di.useCaseModule
 import com.example.googlemaputil_core.common.DIRECTION_MARKER
 import com.example.googlemaputil_core.common.DIRECTION_TYPE
 import com.example.googlemaputil_core.common.MAP_MODE
@@ -31,7 +26,6 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import io.reactivex.disposables.CompositeDisposable
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
-import org.koin.core.context.loadKoinModules
 
 
 abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
@@ -211,19 +205,22 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
     fun isCoarseAndFineLocationPermissionsGranted()
         = googleMapViewModel.isCoarseAndFineLocationPermissionsGranted()
 
-    var currentDirectionMarkerType = DIRECTION_MARKER.DESTINATION
+    var currentDirectionMarkerType = googleMapViewModel.currentDirectionMarkerType.value ?: GoogleMapVM.DEFAULT_DIRECTION_MARKER_TYPE
+        get() = googleMapViewModel.currentDirectionMarkerType.value ?: GoogleMapVM.DEFAULT_DIRECTION_MARKER_TYPE
         set(value) {
             field = value
             googleMapViewModel.currentDirectionMarkerType.onNext(field)
         }
 
-    var mapMode = MAP_MODE.PLACE
+    var mapMode = googleMapViewModel.currentMapMode.value ?: GoogleMapVM.DEFAULT_MAP_MODE
+        get() = googleMapViewModel.currentMapMode.value ?: GoogleMapVM.DEFAULT_MAP_MODE
         set(value) {
             field = value
             googleMapViewModel.currentMapMode.onNext(field)
         }
 
     var infoWindowAdapter: GoogleMap.InfoWindowAdapter? = null
+        get() = googleMapViewModel.infoWindowAdapter.value
         set(value) {
             field = value
             if(field != null)
