@@ -19,13 +19,9 @@ open class GoogleMapApplication(@StringRes private val googleMapKey: Int): Appli
         ApiConstants.API_KEY = apiKey
         Places.initialize(applicationContext, apiKey)
 
-        /*startKoin {
+        /*koinApplication = koinApplication {
             androidContext(this@GoogleMapApplication)
             modules(networkModule, useCaseModule, viewModelModule)
         }*/
-        koinApplication = koinApplication {
-            androidContext(this@GoogleMapApplication)
-            modules(networkModule, useCaseModule, viewModelModule)
-        }
     }
 }

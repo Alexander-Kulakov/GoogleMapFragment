@@ -10,7 +10,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.IdRes
 import androidx.fragment.app.Fragment
 import com.example.googlemaps.di.MyKoinComponent
+import com.example.googlemaps.di.MyKoinContext
+import com.example.googlemaps.di.inject
+import com.example.googlemaps.di.viewModelModule
 import com.example.googlemaps.models.DirectionSegmentUI
+import com.example.googlemaputil_android.di.networkModule
+import com.example.googlemaputil_android.di.useCaseModule
 import com.example.googlemaputil_core.common.DIRECTION_MARKER
 import com.example.googlemaputil_core.common.DIRECTION_TYPE
 import com.example.googlemaputil_core.common.MAP_MODE
@@ -26,10 +31,11 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import io.reactivex.disposables.CompositeDisposable
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
+import org.koin.core.context.loadKoinModules
 
 
 abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
-    : Fragment(), OnMapReadyCallback, MyKoinComponent {
+    : Fragment(), OnMapReadyCallback {
 
     companion object {
         private const val TAG = "GoogleMapsFragment"
@@ -62,6 +68,11 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
         } else {
             Log.e(TAG, "onRequestPermissionsResult: permission failed")
         }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        inject()
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -102,20 +113,20 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
             googleMapViewModel.currentCameraPosition.subscribe {
                 moveCamera(it)
             },
-            googleMapViewModel.originMarker.subscribe {
+            googleMapViewModel.originMarker.subscribe({
                 originMarker?.remove()
                 originMarker = googleMap.addMarker(it)
                 originLocationChanged(originMarker?.position)
-            },
-            googleMapViewModel.destinationMarker.subscribe {
+            }, {}),
+            googleMapViewModel.destinationMarker.subscribe({
                 destinationMarker?.remove()
                 destinationMarker = googleMap.addMarker(it)
                 destinationLocationChanged(destinationMarker?.position)
-            },
-            googleMapViewModel.placeMarker.subscribe {
+            }, {}),
+            googleMapViewModel.placeMarker.subscribe({
                 placeMarker?.remove()
                 placeMarker = googleMap.addMarker(it)
-            },
+            }, {}),
             googleMapViewModel.placeInfo.subscribe {
                 placeInfoChanged(it)
             },
