@@ -102,12 +102,12 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
             googleMapViewModel.originMarker.subscribe {
                 originMarker?.remove()
                 originMarker = googleMap.addMarker(it)
-                originLocationChanged(it.position)
+                originLocationChanged(originMarker?.position)
             },
             googleMapViewModel.destinationMarker.subscribe {
                 destinationMarker?.remove()
                 destinationMarker = googleMap.addMarker(it)
-                destinationLocationChanged(it.position)
+                destinationLocationChanged(destinationMarker?.position)
             },
             googleMapViewModel.placeMarker.subscribe {
                 placeMarker?.remove()
@@ -133,6 +133,9 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
                     if(isPlace) it.marker.hideInfoWindow()
                 }
                 mapModeChanged(it)
+            },
+            googleMapViewModel.currentMarkerType.subscribe {
+                directionMarkerTypeChanged()
             },
             googleMapViewModel.directionSegments.subscribe {
                 directionSegmentsUI.forEach {
@@ -200,7 +203,7 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
             googleMapViewModel.currentMarkerType.onNext(field)
         }
 
-    var showInfoWindowAdapter: GoogleMap.InfoWindowAdapter? = null
+    var infoWindowAdapter: GoogleMap.InfoWindowAdapter? = null
         set(value) {
             field = value
             if(field != null)
@@ -219,8 +222,15 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
 
     abstract fun directionRendered(directionsSegments: List<DirectionSegmentUI>)
 
-    abstract fun originLocationChanged(latLng: LatLng)
-    abstract fun destinationLocationChanged(latLng: LatLng)
+    abstract fun originLocationChanged(latLng: LatLng?)
+    abstract fun destinationLocationChanged(latLng: LatLng?)
+
+    abstract fun directionMarkerTypeChanged()
+
+
+    val isDirectionBuildingAvailable: Boolean
+        get() = originMarker != null && destinationMarker != null
+
 
     override fun onDestroy() {
         super.onDestroy()

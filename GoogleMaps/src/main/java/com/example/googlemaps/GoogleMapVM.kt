@@ -16,6 +16,7 @@ import androidx.lifecycle.AndroidViewModel
 import com.example.googlemaps.mappers.toModel
 import com.example.googlemaps.utils.Utils
 import com.example.googlemaps.models.DirectionSegment
+import com.example.googlemaps.utils.MapUtils
 import com.example.googlemaputil_core.common.DIRECTION_TYPE
 import com.example.googlemaputil_core.common.Result
 import com.example.googlemaputil_core.models.directions.Direction
@@ -127,7 +128,7 @@ open class GoogleMapVM(
                 }
             },
             currentLocation.subscribe {
-                val address = getAddressByLocation(it) ?: return@subscribe
+                val address = MapUtils.getAddressByLocation(app, it) ?: return@subscribe
                 currentAddress.onNext(address)
             }
         )
@@ -247,19 +248,6 @@ open class GoogleMapVM(
             } catch (e: ApiException) {
                 Log.e(TAG, "getDeviceLocation: SecurityException: " + e.message)
             }
-        }
-    }
-
-    fun getAddressByLocation(location: LatLng): Address? {
-        return try {
-            val list =  Geocoder(app)
-                .getFromLocation(location.latitude, location.longitude, 1)
-            val currentAddress = list.firstOrNull()
-            Log.w(TAG, "currentAddress: ${currentAddress?.locale}")
-            currentAddress
-        } catch (e: Exception) {
-            Log.w(TAG, "getAddress exception: ${e}")
-            null
         }
     }
 
