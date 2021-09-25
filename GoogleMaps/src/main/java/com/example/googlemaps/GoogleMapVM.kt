@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Application
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.location.Address
 import android.location.Geocoder
 import android.os.Looper
@@ -23,9 +24,11 @@ import com.example.googlemaputil_core.use_cases.GetDirectionUseCase
 import com.example.googlemaputil_core.use_cases.GetInfoByLocationUseCase
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.location.*
+import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.*
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.Place
+import com.google.maps.android.PolyUtil
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.BehaviorSubject
@@ -42,7 +45,6 @@ open class GoogleMapVM(
         private const val DEFAULT_LOCATION_INTERVAL = 5000L
         private const val DEFAULT_FASTEST_LOCATION_INTERVAL = 3000L
 
-        private const val DEFAULT_ZOOM = 15f
         private const val DEFAULT_POLYLINE_WIDTH = 8f
 
         private val colors = listOf(
@@ -68,13 +70,18 @@ open class GoogleMapVM(
 
 
     val placeMarker = BehaviorSubject.createDefault(MarkerOptions())
-    val originMarker = BehaviorSubject.createDefault(MarkerOptions().icon(Utils.getBitmapFromVector(app, R.drawable.ic_origin_marker)))
-    val destinationMarker = BehaviorSubject.createDefault(MarkerOptions().icon(Utils.getBitmapFromVector(app, R.drawable.ic_destination_marker)))
+    val originMarker = BehaviorSubject.createDefault(
+        MarkerOptions()
+            .icon(Utils.getBitmapFromVector(app, R.drawable.ic_origin_marker))
+    )
+    val destinationMarker = BehaviorSubject.createDefault(
+        MarkerOptions()
+            .icon(Utils.getBitmapFromVector(app, R.drawable.ic_destination_marker))
+    )
 
-    var currentCameraPosition = BehaviorSubject.create<LatLng>()
+    val currentCameraPosition = BehaviorSubject.create<LatLng>()
 
-
-    var directionType = DIRECTION_TYPE.DRIVING
+    val infoWindowAdapter = BehaviorSubject.create<GoogleMap.InfoWindowAdapter>()
 
     val currentMapMode = BehaviorSubject.createDefault(MAP_MODE.PLACE)
     var currentMarkerType = BehaviorSubject.createDefault(DIRECTION_MARKER.DESTINATION)
@@ -83,40 +90,24 @@ open class GoogleMapVM(
     val placeInfo = BehaviorSubject.create<Result<PlaceInfo>>()
     val direction = BehaviorSubject.create<Result<Direction>>()
 
+    val directionSegments = BehaviorSubject.createDefault<List<DirectionSegment>>(emptyList())
 
-    fun setMarkerByPointOfInterest(point: PointOfInterest) {
+
+    fun setMarker(placeId: String, latLng: LatLng) {
         when(currentMapMode.value) {
             MAP_MODE.PLACE -> {
-                placeMarker.onNext(placeMarker.value!!.position(point.latLng))
-                getInfoByLocation(point.placeId)
+                placeMarker.onNext(placeMarker.value!!.position(latLng))
+                getInfoByLocation(placeId)
             }
             MAP_MODE.DIRECTION -> {
                 if(currentMarkerType.value == DIRECTION_MARKER.ORIGIN) {
-                    originMarker.onNext(originMarker.value!!.position(point.latLng))
+                    originMarker.onNext(originMarker.value!!.position(latLng))
                 } else {
-                    destinationMarker.onNext(destinationMarker.value!!.position(point.latLng))
+                    destinationMarker.onNext(destinationMarker.value!!.position(latLng))
                 }
             }
         }
-        currentCameraPosition.onNext(point.latLng)
-    }
-    fun setMarkerByPlace(place: Place) {
-        if(place.latLng == null || place.id == null) return
-
-        when(currentMapMode.value) {
-            MAP_MODE.PLACE -> {
-                placeMarker.onNext(placeMarker.value!!.position(place.latLng!!))
-                getInfoByLocation(place.id!!)
-            }
-            MAP_MODE.DIRECTION -> {
-                if(currentMarkerType.value == DIRECTION_MARKER.ORIGIN) {
-                    originMarker.onNext(originMarker.value!!.position(place.latLng!!))
-                } else {
-                    destinationMarker.onNext(destinationMarker.value!!.position(place.latLng!!))
-                }
-            }
-        }
-        currentCameraPosition.onNext(place.latLng!!)
+        currentCameraPosition.onNext(latLng)
     }
 
 
@@ -143,7 +134,7 @@ open class GoogleMapVM(
         observeDeviceLocation()
     }
 
-    fun getDirection() {
+    fun getDirection(dirType: DIRECTION_TYPE) {
         if(originMarker.value == null || destinationMarker.value == null) return
 
         val origin = originMarker.value!!.position.toModel()
@@ -151,15 +142,46 @@ open class GoogleMapVM(
 
         direction.onNext(Result.Loading())
         compositeDisposable.add(
-            getDirectionUseCase.invoke(origin, destination, directionType, currentLanguage)
+            getDirectionUseCase.invoke(origin, destination, dirType, currentLanguage)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
+
                     direction.onNext(Result.Success(it))
                 }, {
                     direction.onNext(Result.Failure(it))
                 })
         )
     }
+
+    private fun buildDirection(direction: Direction) {
+        val newDirectionSegments = mutableListOf<DirectionSegment>()
+
+        for (route in direction.routes!!) {
+            for(leg in route.legs) {
+                for((currentColorIndex, step) in leg.steps.orEmpty().withIndex()) {
+                    val polylineList = mutableListOf<LatLng>()
+                    polylineList.addAll(PolyUtil.decode(step.polyline.points))
+
+                    val polylineOptions = createPolylineOptions(polylineList, colors[currentColorIndex % colors.size])
+
+                    val midPoint = polylineOptions.points[polylineOptions.points.size / 2]
+
+                    val invisibleMarker =
+                        BitmapDescriptorFactory.fromBitmap(Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888))
+
+                    val markerOptions = createMarkerOptions(midPoint, null, invisibleMarker,
+                        null)
+
+                    newDirectionSegments.add(
+                        DirectionSegment(step, polylineOptions, markerOptions)
+                    )
+                }
+            }
+        }
+
+        directionSegments.onNext(newDirectionSegments)
+    }
+
 
     fun getInfoByLocation(placeId: String) {
         //currentPlaceId = placeId
@@ -202,7 +224,7 @@ open class GoogleMapVM(
 
         locationSettingsResponseTask.addOnCompleteListener {
             try {
-                if (checkCoarseAndFineLocationPermissions()) {
+                if (isCoarseAndFineLocationPermissionsGranted()) {
 
                     fusedLocationProviderClient.requestLocationUpdates(locationRequest, object : LocationCallback() {
                         override fun onLocationResult(locationResult: LocationResult) {
@@ -241,7 +263,7 @@ open class GoogleMapVM(
         }
     }
 
-    fun checkCoarseAndFineLocationPermissions(): Boolean {
+    fun isCoarseAndFineLocationPermissionsGranted(): Boolean {
         return ActivityCompat.checkSelfPermission(app, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED &&
                 ActivityCompat.checkSelfPermission(app, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
     }
@@ -255,9 +277,7 @@ open class GoogleMapVM(
         )
     }
 
-    val directionSegments = BehaviorSubject.create<List<DirectionSegment>>()
-
-    fun createPolylineOptions(polylineList: List<LatLng>, @ColorRes color: Int): PolylineOptions {
+    private fun createPolylineOptions(polylineList: List<LatLng>, @ColorRes color: Int): PolylineOptions {
         return PolylineOptions()
             .color(ContextCompat.getColor(app, color))
             .width(DEFAULT_POLYLINE_WIDTH)
@@ -268,13 +288,12 @@ open class GoogleMapVM(
     }
 
     @SuppressLint("PotentialBehaviorOverride")
-    private fun createMarker(location: LatLng, title: String?, markerIcon: BitmapDescriptor? = null, snippet: String? = null): MarkerOptions {
-        val markerOptions = MarkerOptions()
-        markerOptions.position(location)
-        markerOptions.title(title)
-        markerOptions.snippet(snippet)
-        markerOptions.icon(markerIcon ?: BitmapDescriptorFactory.defaultMarker())
-        return markerOptions
+    private fun createMarkerOptions(location: LatLng, title: String? = null, markerIcon: BitmapDescriptor? = null, snippet: String? = null): MarkerOptions {
+        return MarkerOptions()
+        .position(location)
+        .title(title)
+        .snippet(snippet)
+        .icon(markerIcon ?: BitmapDescriptorFactory.defaultMarker())
     }
 
     override fun onCleared() {
