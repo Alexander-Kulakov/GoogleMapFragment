@@ -70,14 +70,14 @@ open class GoogleMapVM(
     private val fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(app)
 
 
-    val placeMarker = BehaviorSubject.createDefault(MarkerOptions())
-    val originMarker = BehaviorSubject.createDefault(
-        MarkerOptions()
-            .icon(Utils.getBitmapFromVector(app, R.drawable.ic_origin_marker))
+    val placeMarker = BehaviorSubject.create<MarkerOptions>()
+    val originMarker = BehaviorSubject.create<MarkerOptions>(
+        /*MarkerOptions()
+            .icon(Utils.getBitmapFromVector(app, R.drawable.ic_origin_marker))*/
     )
-    val destinationMarker = BehaviorSubject.createDefault(
-        MarkerOptions()
-            .icon(Utils.getBitmapFromVector(app, R.drawable.ic_destination_marker))
+    val destinationMarker = BehaviorSubject.create<MarkerOptions>(
+        /*MarkerOptions()
+            .icon(Utils.getBitmapFromVector(app, R.drawable.ic_destination_marker))*/
     )
 
     val currentCameraPosition = BehaviorSubject.create<LatLng>()
@@ -93,18 +93,40 @@ open class GoogleMapVM(
 
     val directionSegments = BehaviorSubject.createDefault<List<DirectionSegment>>(emptyList())
 
+    val basePlaceMarker: MarkerOptions
+        get() = MarkerOptions()
+
+    val baseOriginMarker: MarkerOptions
+        get() = MarkerOptions().icon(Utils.getBitmapFromVector(app, R.drawable.ic_origin_marker))
+
+    val baseDestinationMarker: MarkerOptions
+        get() = MarkerOptions().icon(Utils.getBitmapFromVector(app, R.drawable.ic_destination_marker))
+
 
     fun setMarker(placeId: String, latLng: LatLng) {
         when(currentMapMode.value) {
             MAP_MODE.PLACE -> {
-                placeMarker.onNext(placeMarker.value!!.position(latLng))
+                if(placeMarker.value != null)
+                    placeMarker.onNext(placeMarker.value!!.position(latLng))
+                else
+                    placeMarker.onNext(basePlaceMarker.position(latLng))
                 getInfoByLocation(placeId)
             }
             MAP_MODE.DIRECTION -> {
                 if(currentDirectionMarkerType.value == DIRECTION_MARKER.ORIGIN) {
-                    originMarker.onNext(originMarker.value!!.position(latLng))
+                    originMarker.onNext(
+                        if(originMarker.value != null)
+                            originMarker.value!!.position(latLng)
+                        else
+                            baseOriginMarker.position(latLng)
+                    )
                 } else {
-                    destinationMarker.onNext(destinationMarker.value!!.position(latLng))
+                    destinationMarker.onNext(
+                        if(originMarker.value != null)
+                            destinationMarker.value!!.position(latLng)
+                        else
+                            baseDestinationMarker.position(latLng)
+                    )
                 }
             }
         }
