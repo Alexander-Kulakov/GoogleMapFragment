@@ -205,27 +205,43 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
     fun isCoarseAndFineLocationPermissionsGranted()
         = googleMapViewModel.isCoarseAndFineLocationPermissionsGranted()
 
-    var currentDirectionMarkerType = googleMapViewModel.currentDirectionMarkerType.value ?: GoogleMapVM.DEFAULT_DIRECTION_MARKER_TYPE
+    /*var currentDirectionMarkerType = DIRECTION_MARKER.DESTINATION
         get() = googleMapViewModel.currentDirectionMarkerType.value ?: GoogleMapVM.DEFAULT_DIRECTION_MARKER_TYPE
         set(value) {
             field = value
             googleMapViewModel.currentDirectionMarkerType.onNext(field)
-        }
+        }*/
 
-    var mapMode = googleMapViewModel.currentMapMode.value ?: GoogleMapVM.DEFAULT_MAP_MODE
+    fun getDirectionMarkerType()
+        = googleMapViewModel.currentDirectionMarkerType.value ?: GoogleMapVM.DEFAULT_DIRECTION_MARKER_TYPE
+
+    fun setDirectionMarkerType(directionMarker: DIRECTION_MARKER) {
+        googleMapViewModel.currentDirectionMarkerType.onNext(directionMarker)
+    }
+
+    fun getMapMode() = googleMapViewModel.currentMapMode.value ?: GoogleMapVM.DEFAULT_MAP_MODE
+
+    fun setMapMode(mapMode: MAP_MODE) {
+        googleMapViewModel.currentMapMode.onNext(mapMode)
+    }
+
+    /*var mapMode = MAP_MODE.PLACE
         get() = googleMapViewModel.currentMapMode.value ?: GoogleMapVM.DEFAULT_MAP_MODE
         set(value) {
             field = value
             googleMapViewModel.currentMapMode.onNext(field)
-        }
+        }*/
 
     var infoWindowAdapter: GoogleMap.InfoWindowAdapter? = null
-        get() = googleMapViewModel.infoWindowAdapter.value
         set(value) {
             field = value
             if(field != null)
                 googleMapViewModel.infoWindowAdapter.onNext(field!!)
         }
+
+    val isDirectionBuildingAvailable: Boolean
+        get() = originMarker != null && destinationMarker != null
+
 
     abstract fun mapModeChanged(mapMode: MAP_MODE)
 
@@ -243,11 +259,6 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
     abstract fun destinationLocationChanged(latLng: LatLng?)
 
     abstract fun directionMarkerTypeChanged()
-
-
-    val isDirectionBuildingAvailable: Boolean
-        get() = originMarker != null && destinationMarker != null
-
 
     override fun onDestroy() {
         super.onDestroy()
