@@ -125,7 +125,7 @@ open class GoogleMapVM(
                     )
                 } else {
                     destinationMarker.onNext(
-                        if(originMarker.value != null)
+                        if(destinationMarker.value != null)
                             destinationMarker.value!!.position(latLng)
                         else
                             baseDestinationMarker.position(latLng)
