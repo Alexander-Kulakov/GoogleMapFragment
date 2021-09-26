@@ -137,9 +137,13 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
                 val isPlace = it == MAP_MODE.PLACE
                 directionSegmentsUI.forEach {
                     it.polyline.isVisible = isPlace
+                    it.polyline.isClickable = !isPlace
                     it.marker.isVisible = isPlace
                     if(isPlace) it.marker.hideInfoWindow()
                 }
+                placeMarker?.isVisible = isPlace
+                originMarker?.isVisible = !isPlace
+                destinationMarker?.isVisible = !isPlace
                 mapModeChanged(it)
             },
             googleMapViewModel.currentDirectionMarkerType.subscribe {
