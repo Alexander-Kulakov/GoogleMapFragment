@@ -1,0 +1,32 @@
+plugins {
+    id 'java-library'
+    id 'kotlin'
+    id 'maven-publish'
+}
+
+group = 'com.github.Alexander-Kulakov'
+version = '1.0.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
+dependencies {
+    implementation 'io.reactivex.rxjava2:rxjava:2.2.19'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                groupId = 'com.github.Alexander-Kulakov'
+                artifactId = 'core'
+                version = '1.0.0'
+
+                from components.java
+            }
+        }
+    }
+}

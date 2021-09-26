@@ -1,5 +1,5 @@
 rootProject.name = "GoogleMapUtil"
 include ':app'
 include ':GoogleMaps'
-include ':googlemaputil_core'
-include ':googlemaputil_android'
+include ':core'
+include ':android'

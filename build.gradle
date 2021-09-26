@@ -28,8 +28,8 @@ task clean(type: Delete) {
 }
 
 ext {
-    firebase_boom = "28.3.0"
-    play_services_auth = "19.2.0"
     retrofit_version = "2.9.0"
     koin_version = "3.1.2"
+    rxjava_version = "2.2.19"
+    rxandroid_version = "2.1.1"
 }
