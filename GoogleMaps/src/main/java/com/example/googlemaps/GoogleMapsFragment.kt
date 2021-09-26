@@ -110,16 +110,19 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
             googleMapViewModel.originMarker.subscribe({
                 originMarker?.remove()
                 originMarker = googleMap.addMarker(it)
+                originMarker?.isVisible = getMapMode() == MAP_MODE.DIRECTION
                 originLocationChanged(originMarker?.position)
             }, {}),
             googleMapViewModel.destinationMarker.subscribe({
                 destinationMarker?.remove()
                 destinationMarker = googleMap.addMarker(it)
+                destinationMarker?.isVisible = getMapMode() == MAP_MODE.DIRECTION
                 destinationLocationChanged(destinationMarker?.position)
             }, {}),
             googleMapViewModel.placeMarker.subscribe({
                 placeMarker?.remove()
                 placeMarker = googleMap.addMarker(it)
+                placeMarker?.isVisible = getMapMode() == MAP_MODE.PLACE
             }, {}),
             googleMapViewModel.placeInfo.subscribe {
                 placeInfoChanged(it)
@@ -209,13 +212,6 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
     fun isCoarseAndFineLocationPermissionsGranted()
         = googleMapViewModel.isCoarseAndFineLocationPermissionsGranted()
 
-    /*var currentDirectionMarkerType = DIRECTION_MARKER.DESTINATION
-        get() = googleMapViewModel.currentDirectionMarkerType.value ?: GoogleMapVM.DEFAULT_DIRECTION_MARKER_TYPE
-        set(value) {
-            field = value
-            googleMapViewModel.currentDirectionMarkerType.onNext(field)
-        }*/
-
     fun getDirectionMarkerType()
         = googleMapViewModel.currentDirectionMarkerType.value ?: GoogleMapVM.DEFAULT_DIRECTION_MARKER_TYPE
 
@@ -228,13 +224,6 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
     fun setMapMode(mapMode: MAP_MODE) {
         googleMapViewModel.currentMapMode.onNext(mapMode)
     }
-
-    /*var mapMode = MAP_MODE.PLACE
-        get() = googleMapViewModel.currentMapMode.value ?: GoogleMapVM.DEFAULT_MAP_MODE
-        set(value) {
-            field = value
-            googleMapViewModel.currentMapMode.onNext(field)
-        }*/
 
     var infoWindowAdapter: GoogleMap.InfoWindowAdapter? = null
         set(value) {
