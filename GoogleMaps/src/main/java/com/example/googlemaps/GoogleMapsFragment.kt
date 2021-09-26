@@ -136,9 +136,9 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
             googleMapViewModel.currentMapMode.subscribe {
                 val isPlace = it == MAP_MODE.PLACE
                 directionSegmentsUI.forEach {
-                    it.polyline.isVisible = isPlace
+                    it.polyline.isVisible = !isPlace
                     it.polyline.isClickable = !isPlace
-                    it.marker.isVisible = isPlace
+                    it.marker.isVisible = !isPlace
                     if(isPlace) it.marker.hideInfoWindow()
                 }
                 placeMarker?.isVisible = isPlace
