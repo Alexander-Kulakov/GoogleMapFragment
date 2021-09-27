@@ -105,13 +105,14 @@ open class GoogleMapVM(
 
     var myLocationSynchronizedWithOrigin = false
 
-    private var firstInit = true
-
 
     fun setMarker(placeId: String, latLng: LatLng) {
         when(currentMapMode.value) {
             MAP_MODE.PLACE -> {
                 placeMarker.onNext(basePlaceMarker.position(latLng))
+                if(!destinationMarker.hasValue()) {
+                    destinationMarker.onNext(baseDestinationMarker.position(latLng))
+                }
                 getInfoByLocation(placeId)
             }
             MAP_MODE.DIRECTION -> {
@@ -237,15 +238,11 @@ open class GoogleMapVM(
                             val lng = locationResult.lastLocation.longitude
 
                             val newLocation = LatLng(lat, lng)
-                            if(firstInit) {
-                                currentCameraPosition.onNext(newLocation)
-                            }
                             if(myLocationSynchronizedWithOrigin) {
                                 originMarker.onNext(baseOriginMarker.position(newLocation))
                             }
 
                             currentLocation.onNext(newLocation)
-                            firstInit = false
                         }
                     }, Looper.getMainLooper())
 
