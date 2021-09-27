@@ -123,6 +123,7 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
                 placeMarker?.remove()
                 placeMarker = googleMap.addMarker(it)
                 placeMarker?.isVisible = getMapMode() == MAP_MODE.PLACE
+                placeLocationChanged(placeMarker?.position)
             }, {}),
             googleMapViewModel.placeInfo.subscribe {
                 placeInfoChanged(it)
@@ -138,12 +139,7 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
             },
             googleMapViewModel.currentMapMode.subscribe {
                 val isPlace = it == MAP_MODE.PLACE
-                directionSegmentsUI.forEach {
-                    it.polyline.isVisible = !isPlace
-                    it.polyline.isClickable = !isPlace
-                    it.marker.isVisible = !isPlace
-                    if(isPlace) it.marker.hideInfoWindow()
-                }
+                updateDirectionVisibility()
                 placeMarker?.isVisible = isPlace
                 originMarker?.isVisible = !isPlace
                 destinationMarker?.isVisible = !isPlace
@@ -153,6 +149,8 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
                 directionMarkerTypeChanged()
             },
             googleMapViewModel.directionSegments.subscribe {
+                Log.w(TAG, "directionSegments rendered")
+
                 directionSegmentsUI.forEach {
                     it.marker.remove()
                     it.polyline.remove()
@@ -167,12 +165,24 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
                     )
                 }
 
+                updateDirectionVisibility()
+
                 directionRendered(directionSegmentsUI)
             }
         )
 
         googleMap.setOnPoiClickListener {
             googleMapViewModel.setMarker(it.placeId, it.latLng)
+        }
+    }
+
+    private fun updateDirectionVisibility() {
+        val isPlace = getMapMode() == MAP_MODE.PLACE
+        directionSegmentsUI.forEach {
+            it.polyline.isVisible = !isPlace
+            it.polyline.isClickable = !isPlace
+            it.marker.isVisible = !isPlace
+            if(isPlace) it.marker.hideInfoWindow()
         }
     }
 
@@ -192,6 +202,10 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
 
     fun toggleMapMode() {
         googleMapViewModel.toggleMapMode()
+    }
+
+    fun getPlaceInfo(placeId: String) {
+        googleMapViewModel.getInfoByLocation(placeId)
     }
 
     fun getDirection(dirType: DIRECTION_TYPE = DIRECTION_TYPE.DRIVING) {
@@ -236,6 +250,13 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
         get() = originMarker != null && destinationMarker != null
 
 
+    var myLocationSynchronizedWithOrigin = false
+        set(value) {
+            field = value
+            googleMapViewModel.myLocationSynchronizedWithOrigin = field
+        }
+
+
     abstract fun mapModeChanged(mapMode: MAP_MODE)
 
     abstract fun placeInfoChanged(placeInfoResult: Result<PlaceInfo>)
@@ -250,6 +271,7 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
 
     abstract fun originLocationChanged(latLng: LatLng?)
     abstract fun destinationLocationChanged(latLng: LatLng?)
+    abstract fun placeLocationChanged(latLng: LatLng?)
 
     abstract fun directionMarkerTypeChanged()
 
