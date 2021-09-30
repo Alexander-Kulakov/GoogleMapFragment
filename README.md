@@ -1,6 +1,15 @@
 # GoogleMapFragment [![](https://jitpack.io/v/Alexander-Kulakov/GoogleMapFragment.svg)](https://jitpack.io/#Alexander-Kulakov/GoogleMapFragment)
 this library allow to simplify working with google maps sdk for android.
 
+## Demo
+See demo project here [here](https://src.vironit.com/a.kulakov/maps)
+
+![image](https://user-images.githubusercontent.com/90984417/135409254-f5987ed9-831e-4803-bf35-6e05473966ae.png)
+![image](https://user-images.githubusercontent.com/90984417/135409328-9d643878-694e-44c0-8ee4-ac782c90b99d.png)
+![image](https://user-images.githubusercontent.com/90984417/135409392-c9f6ebd8-9b54-4624-997b-3d2d1857ce09.png)
+![image](https://user-images.githubusercontent.com/90984417/135409469-eea620f5-557e-4580-8e34-b0a375f5f44e.png)
+
+
 ## How can I use it?
 This library contains 3 modules - core, android and GoogleMapFragment. 
 * "Core" contains models and interfaces. 
