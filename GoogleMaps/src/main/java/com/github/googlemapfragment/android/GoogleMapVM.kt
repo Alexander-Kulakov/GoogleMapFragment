@@ -34,6 +34,7 @@ import com.google.maps.android.PolyUtil
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.BehaviorSubject
+import io.reactivex.subjects.PublishSubject
 
 open class GoogleMapVM(
     private val app: Application,
@@ -84,12 +85,13 @@ open class GoogleMapVM(
             .icon(Utils.getBitmapFromVector(app, R.drawable.ic_destination_marker))*/
     )
 
-    val currentCameraPosition = BehaviorSubject.create<LatLng>()
+    val currentCameraPosition = PublishSubject.create<LatLng>()
+    var cameraPosition: CameraPosition? = null
 
     val infoWindowAdapter = BehaviorSubject.create<GoogleMap.InfoWindowAdapter>()
 
     val currentMapMode = BehaviorSubject.createDefault(DEFAULT_MAP_MODE)
-    var currentDirectionMarkerType = BehaviorSubject.createDefault(DEFAULT_DIRECTION_MARKER_TYPE)
+    val currentDirectionMarkerType = BehaviorSubject.createDefault(DEFAULT_DIRECTION_MARKER_TYPE)
 
 
     val placeInfo = BehaviorSubject.create<Result<PlaceInfo>>()

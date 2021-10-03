@@ -105,7 +105,7 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
                 googleMap.setInfoWindowAdapter(it)
             },
             googleMapViewModel.currentCameraPosition.subscribe {
-                moveCamera(it)
+                moveCamera(it, googleMap.cameraPosition.zoom)
             },
             googleMapViewModel.originMarker.subscribe({
                 originMarker?.remove()
@@ -171,8 +171,24 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
             }
         )
 
+        googleMapViewModel.cameraPosition?.let {
+            googleMapViewModel.currentCameraPosition.onNext(it.target)
+        }
+
         googleMap.setOnPoiClickListener {
             googleMapViewModel.setMarker(it.placeId, it.latLng)
+        }
+
+        googleMap.setOnCameraMoveListener {
+            googleMapViewModel.cameraPosition = googleMap.cameraPosition
+        }
+
+        googleMap.setOnPolylineClickListener { polyline ->
+            val segment = directionSegmentsUI.find { it.polyline == polyline }
+            if(segment != null) {
+                segment.marker.showInfoWindow()
+                moveCamera(segment.marker.position)
+            }
         }
     }
 
