@@ -76,14 +76,8 @@ open class GoogleMapVM(
 
 
     val placeMarker = BehaviorSubject.create<MarkerOptions>()
-    val originMarker = BehaviorSubject.create<MarkerOptions>(
-        /*MarkerOptions()
-            .icon(Utils.getBitmapFromVector(app, R.drawable.ic_origin_marker))*/
-    )
-    val destinationMarker = BehaviorSubject.create<MarkerOptions>(
-        /*MarkerOptions()
-            .icon(Utils.getBitmapFromVector(app, R.drawable.ic_destination_marker))*/
-    )
+    val originMarker = BehaviorSubject.create<MarkerOptions>()
+    val destinationMarker = BehaviorSubject.create<MarkerOptions>()
 
     val currentCameraPosition = PublishSubject.create<LatLng>()
     var cameraPosition: CameraPosition? = null
@@ -111,35 +105,30 @@ open class GoogleMapVM(
                 R.drawable.ic_destination_marker
             ))
 
+    var myLocationSynchronizedWithOrigin = false
+
 
     fun setMarker(placeId: String, latLng: LatLng) {
         when(currentMapMode.value) {
             MAP_MODE.PLACE -> {
-                if(placeMarker.value != null)
-                    placeMarker.onNext(placeMarker.value!!.position(latLng))
-                else
-                    placeMarker.onNext(basePlaceMarker.position(latLng))
+                placeMarker.onNext(basePlaceMarker.position(latLng))
+                if(!destinationMarker.hasValue()) {
+                    destinationMarker.onNext(baseDestinationMarker.position(latLng))
+                }
                 getInfoByLocation(placeId)
             }
             MAP_MODE.DIRECTION -> {
                 if(currentDirectionMarkerType.value == DIRECTION_MARKER.ORIGIN) {
                     originMarker.onNext(
-                        if(originMarker.value != null)
-                            originMarker.value!!.position(latLng).visible(true)
-                        else
-                            baseOriginMarker.position(latLng).visible(true)
+                        baseOriginMarker.position(latLng)
                     )
                 } else {
                     destinationMarker.onNext(
-                        if(destinationMarker.value != null)
-                            destinationMarker.value!!.position(latLng).visible(true)
-                        else
-                            baseDestinationMarker.position(latLng).visible(true)
+                        baseDestinationMarker.position(latLng)
                     )
                 }
             }
         }
-        currentCameraPosition.onNext(latLng)
     }
 
 
@@ -215,7 +204,7 @@ open class GoogleMapVM(
 
 
     fun getInfoByLocation(placeId: String) {
-        Log.w(TAG, "current locality $currentLanguage")
+        Log.w(TAG, "current lang $currentLanguage")
 
         placeInfo.onNext(Result.Loading())
 
@@ -251,9 +240,8 @@ open class GoogleMapVM(
                             val lng = locationResult.lastLocation.longitude
 
                             val newLocation = LatLng(lat, lng)
-                            if(currentLocation.value == null) {
-                                currentLocation.onNext(newLocation)
-                                currentCameraPosition.onNext(newLocation)
+                            if(myLocationSynchronizedWithOrigin) {
+                                originMarker.onNext(baseOriginMarker.position(newLocation))
                             }
 
                             currentLocation.onNext(newLocation)
@@ -288,7 +276,6 @@ open class GoogleMapVM(
             .width(DEFAULT_POLYLINE_WIDTH)
             .startCap(ButtCap())
             .jointType(JointType.ROUND)
-            .clickable(true)
             .addAll(polylineList)
     }
 
