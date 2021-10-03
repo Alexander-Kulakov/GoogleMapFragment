@@ -104,9 +104,6 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
             googleMapViewModel.infoWindowAdapter.subscribe {
                 googleMap.setInfoWindowAdapter(it)
             },
-            googleMapViewModel.currentCameraPosition.subscribe {
-                moveCamera(it, googleMap.cameraPosition.zoom)
-            },
             googleMapViewModel.originMarker.subscribe({
                 originMarker?.remove()
                 originMarker = googleMap.addMarker(it)
@@ -172,7 +169,7 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
         )
 
         googleMapViewModel.cameraPosition?.let {
-            googleMapViewModel.currentCameraPosition.onNext(it.target)
+            moveCamera(it.target, it.zoom)
         }
 
         googleMap.setOnPoiClickListener {
@@ -213,7 +210,7 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
     fun moveToCurrentLocation() {
         val myLocation = googleMapViewModel.currentLocation.value
         if(myLocation != null)
-            googleMapViewModel.currentCameraPosition.onNext(myLocation)
+            moveCamera(myLocation)
     }
 
     fun toggleMapMode() {
