@@ -33,14 +33,24 @@ class MapsApplication: GoogleMapApplication(R.string.google_maps_key) {
 
 3. Inherite your fragment with SupportMapFragment from "GoogleMapsFragment", pass into constructor id of SupportMapFragment
 ```kotlin
-class MainFragment: GoogleMapFragment(R.id.map) {
+class MainFragment: GoogleMapFragment(R.id.map), IMyLocationChangedListener, IDirectionListener, IMapModeChangedListener, IPlaceMarkerChangedListener
+        IDirectionMarkersChangedListener, IPlaceInfoStatusChangedListener {
    
     // override this method if you need googleMap object
     override fun onMapReady(googleMap: GoogleMap) {
-      super.onMapReady() // be sure that you call this method in base class because there library requests permissions and subscribes to data changes
+      
+      // set listeners here
+      myLocationChangedListener = this
+      directionListener = this
+      placeInfoStatusChangedListener = this
+      mapModeChangedListener = this
+      placeMarkerChangedListener = this
+      directionMarkersChangedListener = this
+      
+      super.onMapReady() // be sure that you call this method in base class because this library requests permissions and subscribes to data changes
     }
 
-    override fun placeInfoChanged(placeInfoResult: Result<PlaceInfo>) {
+    override fun onPlaceInfoStatusChange(placeInfoResult: Result<PlaceInfo>) {
       // if the user taps on the point of interest, information fetched automatically about it. You can trigger fetching place info calling "" 
       when(placeInfoResult) {
             is Result.Loading -> {
@@ -55,32 +65,32 @@ class MainFragment: GoogleMapFragment(R.id.map) {
         }
     }
 
-    override fun directionChanged(directionResult: Result<Direction>) {
+    override fun onDirectionChange(directionResult: Result<Direction>) {
       // this callback calls if we calls the method getDirection() in the base class
     }
 
-    override fun currentLocationChanged(latLng: LatLng) {
+    override fun onCurrentLocationChange(latLng: LatLng) {
       // calls this method if current user location changes
     }
 
-    override fun currentAddressChanged(address: Address) {
+    override fun onCurrentAddressChange(address: Address) {
       // calls in the same time if currentLocationChanged is calling and pass current user address
     }
 
-    override fun directionRendered(directionsSegments: List<DirectionSegmentUI>) {
+    override fun onDirectionRender(directionsSegments: List<DirectionSegmentUI>) {
       // calls if your direction is received and rendered on the map
     }
 
     // calls if your marker positions are changed
-    override fun originLocationChanged(latLng: LatLng?)
-    override fun destinationLocationChanged(latLng: LatLng?)
-    override fun placeLocationChanged(latLng: LatLng?)
+    override fun onOriginLocationChange(latLng: LatLng?)
+    override fun onDestinationLocationChange(latLng: LatLng?)
+    override fun onPlaceMarkerChange(latLng: LatLng?)
 
-    override fun directionMarkerTypeChanged() {
+    override fun onDirectionMarkerTypeChange(directionMarker: DIRECTION_MARKER) {
       // calls if your direction marker type is changed (ORIGIN or DESTINATION)
     }
     
-    override fun mapModeChanged(mapMode: MAP_MODE) {
+    override fun onMapModeChange(mapMode: MAP_MODE) {
       // calls if your map mode is changed (PLACE or DIRECTION)
     }
 }
