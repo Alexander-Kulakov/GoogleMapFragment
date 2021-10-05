@@ -20,7 +20,7 @@ interface IDirectionListener {
 }
 
 interface IPlaceInfoStatusChangedListener {
-    fun onChange(placeInfoResult: Result<PlaceInfo>)
+    fun onPlaceInfoStatusChange(placeInfoResult: Result<PlaceInfo>)
 }
 
 interface IMapModeChangedListener {
@@ -29,7 +29,7 @@ interface IMapModeChangedListener {
 }
 
 interface IPlaceMarkerChangedListener {
-    fun onChange(latLng: LatLng?)
+    fun onPlaceMarkerChange(latLng: LatLng?)
 }
 interface IDirectionMarkersChangedListener {
     fun onOriginLocationChange(latLng: LatLng?)
