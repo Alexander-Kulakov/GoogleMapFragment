@@ -17,8 +17,8 @@ This library contains 3 modules - core, android and GoogleMapFragment.
 * "GoogleMapFragment" is main android module with nessasary functionality.
 1. Paste it in your app module:
 ```
-implementation 'com.github.Alexander-Kulakov.GoogleMapFragment:GoogleMaps:1.0.3'
-implementation 'com.github.Alexander-Kulakov.GoogleMapFragment:core:1.0.3'
+implementation 'com.github.Alexander-Kulakov.GoogleMapFragment:GoogleMaps:x.y.z'
+implementation 'com.github.Alexander-Kulakov.GoogleMapFragment:core:x.y.z'
 ```
 
 2. Create your application class and inherite it from "GoogleMapApplication", in the constructor pass string resource with your google map api key:
