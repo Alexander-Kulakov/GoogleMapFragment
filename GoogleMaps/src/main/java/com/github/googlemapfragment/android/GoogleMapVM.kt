@@ -12,10 +12,6 @@ import androidx.annotation.ColorRes
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
-import com.github.googlemapfragment.android.mappers.toModel
-import com.github.googlemapfragment.android.models.DirectionSegment
-import com.github.googlemapfragment.android.utils.MapUtils
-import com.github.googlemapfragment.android.utils.Utils
 import com.github.core.common.DIRECTION_MARKER
 import com.github.core.common.DIRECTION_TYPE
 import com.github.core.common.MAP_MODE
@@ -25,6 +21,10 @@ import com.github.core.models.place_info.PlaceInfo
 import com.github.core.use_cases.GetDirectionUseCase
 import com.github.core.use_cases.GetInfoByLocationUseCase
 import com.github.googlemapfragment.R
+import com.github.googlemapfragment.android.mappers.toModel
+import com.github.googlemapfragment.android.models.DirectionSegment
+import com.github.googlemapfragment.android.utils.MapUtils
+import com.github.googlemapfragment.android.utils.Utils
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.GoogleMap
@@ -78,12 +78,12 @@ open class GoogleMapVM(
     val originMarker = BehaviorSubject.create<MarkerOptions>()
     val destinationMarker = BehaviorSubject.create<MarkerOptions>()
 
-    val currentCameraPosition = BehaviorSubject.create<LatLng>()
+    var cameraPosition: CameraPosition? = null
 
     val infoWindowAdapter = BehaviorSubject.create<GoogleMap.InfoWindowAdapter>()
 
     val currentMapMode = BehaviorSubject.createDefault(DEFAULT_MAP_MODE)
-    var currentDirectionMarkerType = BehaviorSubject.createDefault(DEFAULT_DIRECTION_MARKER_TYPE)
+    val currentDirectionMarkerType = BehaviorSubject.createDefault(DEFAULT_DIRECTION_MARKER_TYPE)
 
 
     val placeInfo = BehaviorSubject.create<Result<PlaceInfo>>()
