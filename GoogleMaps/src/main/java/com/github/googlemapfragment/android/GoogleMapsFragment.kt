@@ -2,22 +2,19 @@ package com.github.googlemapfragment.android
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.location.Address
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.IdRes
 import androidx.fragment.app.Fragment
-import com.github.googlemapfragment.android.di.inject
-import com.github.googlemapfragment.android.models.DirectionSegmentUI
 import com.github.core.common.DIRECTION_MARKER
 import com.github.core.common.DIRECTION_TYPE
 import com.github.core.common.MAP_MODE
-import com.github.core.common.Result
-import com.github.core.models.directions.Direction
 import com.github.core.models.directions.Step
-import com.github.core.models.place_info.PlaceInfo
+import com.github.googlemapfragment.android.di.inject
+import com.github.googlemapfragment.android.listeners.*
+import com.github.googlemapfragment.android.models.DirectionSegmentUI
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -111,31 +108,31 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
                 originMarker?.remove()
                 originMarker = googleMap.addMarker(it)
                 originMarker?.isVisible = getMapMode() == MAP_MODE.DIRECTION
-                originLocationChanged(originMarker?.position)
+                directionMarkersChangedListener?.onOriginLocationChange(originMarker?.position)
             }, {}),
             googleMapViewModel.destinationMarker.subscribe({
                 destinationMarker?.remove()
                 destinationMarker = googleMap.addMarker(it)
                 destinationMarker?.isVisible = getMapMode() == MAP_MODE.DIRECTION
-                destinationLocationChanged(destinationMarker?.position)
+                directionMarkersChangedListener?.onDestinationLocationChange(destinationMarker?.position)
             }, {}),
             googleMapViewModel.placeMarker.subscribe({
                 placeMarker?.remove()
                 placeMarker = googleMap.addMarker(it)
                 placeMarker?.isVisible = getMapMode() == MAP_MODE.PLACE
-                placeLocationChanged(placeMarker?.position)
+                placeMarkerChangedListener?.onChange(placeMarker?.position)
             }, {}),
             googleMapViewModel.placeInfo.subscribe {
-                placeInfoChanged(it)
+                placeInfoStatusChangedListener?.onChange(it)
             },
             googleMapViewModel.direction.subscribe {
-                directionChanged(it)
+                directionListener?.onDirectionChange(it)
             },
             googleMapViewModel.currentLocation.subscribe {
-                currentLocationChanged(it)
+                myLocationChangedListener?.onCurrentLocationChange(it)
             },
             googleMapViewModel.currentAddress.subscribe {
-                currentAddressChanged(it)
+                myLocationChangedListener?.onCurrentAddressChange(it)
             },
             googleMapViewModel.currentMapMode.subscribe {
                 val isPlace = it == MAP_MODE.PLACE
@@ -143,10 +140,10 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
                 placeMarker?.isVisible = isPlace
                 originMarker?.isVisible = !isPlace
                 destinationMarker?.isVisible = !isPlace
-                mapModeChanged(it)
+                mapModeChangedListener?.onMapModeChange(it)
             },
             googleMapViewModel.currentDirectionMarkerType.subscribe {
-                directionMarkerTypeChanged()
+                mapModeChangedListener?.onDirectionMarkerTypeChange(it)
             },
             googleMapViewModel.directionSegments.subscribe {
                 Log.w(TAG, "directionSegments rendered")
@@ -167,7 +164,7 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
 
                 updateDirectionVisibility()
 
-                directionRendered(directionSegmentsUI)
+                directionListener?.onDirectionRender(directionSegmentsUI)
             }
         )
 
@@ -257,23 +254,12 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
         }
 
 
-    abstract fun mapModeChanged(mapMode: MAP_MODE)
-
-    abstract fun placeInfoChanged(placeInfoResult: Result<PlaceInfo>)
-
-    abstract fun directionChanged(directionResult: Result<Direction>)
-
-    abstract fun currentLocationChanged(latLng: LatLng)
-
-    abstract fun currentAddressChanged(address: Address)
-
-    abstract fun directionRendered(directionsSegments: List<DirectionSegmentUI>)
-
-    abstract fun originLocationChanged(latLng: LatLng?)
-    abstract fun destinationLocationChanged(latLng: LatLng?)
-    abstract fun placeLocationChanged(latLng: LatLng?)
-
-    abstract fun directionMarkerTypeChanged()
+    var myLocationChangedListener: IMyLocationChangedListener? = null
+    var directionListener: IDirectionListener? = null
+    var placeInfoStatusChangedListener: IPlaceInfoStatusChangedListener? = null
+    var mapModeChangedListener: IMapModeChangedListener? = null
+    var placeMarkerChangedListener: IPlaceMarkerChangedListener? = null
+    var directionMarkersChangedListener: IDirectionMarkersChangedListener? = null
 
     override fun onDestroy() {
         super.onDestroy()
