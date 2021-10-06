@@ -117,10 +117,10 @@ abstract class GoogleMapsFragment(@IdRes private val mapFragmentId: Int)
                 placeMarker?.remove()
                 placeMarker = googleMap.addMarker(it)
                 placeMarker?.isVisible = getMapMode() == MAP_MODE.PLACE
-                placeMarkerChangedListener?.onPlaceMarkerChange(placeMarker?.position)
+                placeMarkerChangedListener?.onChange(placeMarker?.position)
             }, {}),
             googleMapViewModel.placeInfo.subscribe {
-                placeInfoStatusChangedListener?.onPlaceInfoStatusChange(it)
+                placeInfoStatusChangedListener?.onChange(it)
             },
             googleMapViewModel.direction.subscribe {
                 directionListener?.onDirectionChange(it)

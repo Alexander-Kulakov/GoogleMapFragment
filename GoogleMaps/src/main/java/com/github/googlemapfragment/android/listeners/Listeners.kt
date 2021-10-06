@@ -19,8 +19,8 @@ interface IDirectionListener {
     fun onDirectionRender(directionsSegments: List<DirectionSegmentUI>)
 }
 
-interface IPlaceInfoStatusChangedListener {
-    fun onPlaceInfoStatusChange(placeInfoResult: Result<PlaceInfo>)
+fun interface IPlaceInfoStatusChangedListener {
+    fun onChange(placeInfoResult: Result<PlaceInfo>)
 }
 
 interface IMapModeChangedListener {
@@ -28,8 +28,8 @@ interface IMapModeChangedListener {
     fun onDirectionMarkerTypeChange(directionMarker: DIRECTION_MARKER)
 }
 
-interface IPlaceMarkerChangedListener {
-    fun onPlaceMarkerChange(latLng: LatLng?)
+fun interface IPlaceMarkerChangedListener {
+    fun onChange(latLng: LatLng?)
 }
 interface IDirectionMarkersChangedListener {
     fun onOriginLocationChange(latLng: LatLng?)
